@@ -14,12 +14,28 @@ export type Spot = {
   break: string;
   notes: string;
   featured?: boolean;
+  parentId?: string;
 };
 
 export const SPOTS: Spot[] = [
   // --- New York ---
   {
+    id: "rockaway",
+    name: "Rockaway Beach",
+    region: "Rockaway, Queens, NY",
+    country: "US",
+    lat: 40.5885,
+    lon: -73.8138,
+    provider: "ndbc",
+    buoy: "44065",
+    tideStation: "8531680",
+    faces: "S",
+    break: "beach",
+    notes: "Choose a named Rockaway surf break to see its local notes and forecast.",
+  },
+  {
     id: "rockaway-67",
+    parentId: "rockaway",
     name: "Rockaway · Beach 67th",
     region: "Rockaway, Queens, NY",
     country: "US",
@@ -34,6 +50,7 @@ export const SPOTS: Spot[] = [
   },
   {
     id: "rockaway-90",
+    parentId: "rockaway",
     name: "Rockaway · Beach 90th",
     region: "Rockaway, Queens, NY",
     country: "US",
@@ -48,6 +65,7 @@ export const SPOTS: Spot[] = [
   },
   {
     id: "rockaway-92",
+    parentId: "rockaway",
     name: "Rockaway · Beach 92nd",
     region: "Rockaway, Queens, NY",
     country: "US",
@@ -62,6 +80,7 @@ export const SPOTS: Spot[] = [
   },
   {
     id: "rockaway-110",
+    parentId: "rockaway",
     name: "Rockaway · Beach 110th",
     region: "Rockaway, Queens, NY",
     country: "US",
@@ -373,7 +392,11 @@ export function getSpot(id: string): Spot | undefined {
 }
 
 export function isFeaturedSpot(spot: Spot): boolean {
-  return spot.region.includes(", NY") || spot.region.includes("Florianópolis, BR");
+  return !spot.parentId && (spot.region.includes(", NY") || spot.region.includes("Florianópolis, BR"));
+}
+
+export function getChildSpots(parentId: string): Spot[] {
+  return SPOTS.filter((spot) => spot.parentId === parentId);
 }
 
 function normalize(value: string): string {

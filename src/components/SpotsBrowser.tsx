@@ -12,6 +12,7 @@ type SpotWithData = Spot & {
   buoyData: BuoyReading | null;
   specData: SpecReading | null;
   rating: Rating;
+  children?: Spot[];
 };
 
 type Props = { spots: SpotWithData[] };
@@ -33,6 +34,7 @@ export function SpotsBrowser({ spots }: Props) {
   const [results, setResults] = useState<SpotWithData[]>(spots);
   const [total, setTotal] = useState(spots.length);
   const [loading, setLoading] = useState(false);
+  const [expandedSpotId, setExpandedSpotId] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query.trim();
@@ -70,10 +72,16 @@ export function SpotsBrowser({ spots }: Props) {
 
   const visibleSpots = query.trim() ? results : spots;
   const visibleTotal = query.trim() ? total : spots.length;
+  const parentIds = new Set(
+    visibleSpots.filter((spot) => spot.children?.length).map((spot) => spot.id),
+  );
+  const displaySpots = visibleSpots.filter(
+    (spot) => !spot.parentId || !parentIds.has(spot.parentId),
+  );
 
   const grouped = useMemo(() => {
     const map = new Map<string, SpotWithData[]>();
-    for (const s of visibleSpots) {
+    for (const s of displaySpots) {
       // Group by country/region logic: use "NY" for all NY spots, and "Florianópolis" for all Floripa spots
       let k = s.region;
       if (s.region.includes(", NY")) k = "New York";
@@ -91,7 +99,7 @@ export function SpotsBrowser({ spots }: Props) {
       if (b[0] === "Florianópolis") return 1;
       return a[0].localeCompare(b[0]);
     });
-  }, [visibleSpots]);
+  }, [displaySpots]);
 
   return (
     <>
@@ -166,12 +174,63 @@ export function SpotsBrowser({ spots }: Props) {
               <span>{list.length}</span>
             </h3>
             <div className="grid grid-cols-1 gap-3">
-              {list.map((s) => (
-                <Link
-                  key={s.id}
-                  href={`/spot/${s.id}`}
-                  className="group block rounded-lg border border-[var(--border)] bg-[var(--panel)]/60 p-4 hover-glow transition-all hover:border-[var(--accent)]/40"
-                >
+              {list.map((s) =>
+                s.children?.length ? (
+                  <div
+                    key={s.id}
+                    className="rounded-lg border border-[var(--border)] bg-[var(--panel)]/60 p-4 transition-all hover:border-[var(--accent)]/40"
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedSpotId((current) =>
+                          current === s.id ? null : s.id,
+                        )
+                      }
+                      className="w-full text-left"
+                      aria-expanded={expandedSpotId === s.id}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[var(--accent)] text-xs">
+                              {expandedSpotId === s.id ? "⌄" : "▸"}
+                            </span>
+                            <h2 className="text-base font-bold text-[var(--text)] truncate">
+                              {s.name}
+                            </h2>
+                            <span className="text-[10px] text-[var(--muted)] shrink-0">
+                              /{s.region}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[11px] text-[var(--muted)]">
+                            {s.children.length} surf breaks · tap to choose a peak
+                          </p>
+                        </div>
+                        <RatingPill rating={s.rating} />
+                      </div>
+                    </button>
+                    {expandedSpotId === s.id ? (
+                      <div className="mt-4 grid gap-2 border-t border-[var(--border)] pt-3 sm:grid-cols-2">
+                        {s.children.map((child) => (
+                          <Link
+                            key={child.id}
+                            href={`/spot/${child.id}`}
+                            className="rounded border border-[var(--border)] bg-[var(--bg-2)]/50 px-3 py-2 text-sm text-[var(--text)] transition-colors hover:border-[var(--accent)]/50 hover:text-[var(--accent)]"
+                          >
+                            <span className="mr-2 text-[var(--accent)]">▸</span>
+                            {child.name.replace("Rockaway · ", "")}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <Link
+                    key={s.id}
+                    href={`/spot/${s.id}`}
+                    className="group block rounded-lg border border-[var(--border)] bg-[var(--panel)]/60 p-4 hover-glow transition-all hover:border-[var(--accent)]/40"
+                  >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
@@ -244,8 +303,9 @@ export function SpotsBrowser({ spots }: Props) {
                       </span>
                     </div>
                   </div>
-                </Link>
-              ))}
+                  </Link>
+                ),
+              )}
             </div>
           </div>
         ))}

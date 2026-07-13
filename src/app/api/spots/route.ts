@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isFeaturedSpot, searchSpots } from "@/lib/spots";
+import { getChildSpots, isFeaturedSpot, searchSpots } from "@/lib/spots";
 import type { Spot } from "@/lib/spots";
 import { fetchLatestBuoy, fetchLatestSpec } from "@/lib/noaa";
 import { fetchOpenMeteoBuoy, fetchOpenMeteoSpec } from "@/lib/openmeteo";
@@ -37,7 +37,14 @@ export async function GET(req: Request) {
         dominantPeriodS: buoy?.dominantPeriodS ?? spec?.swellPeriodS ?? null,
         windSpeedMs: buoy?.windSpeedMs ?? null,
       });
-      return { ...spot, buoyData: buoy, specData: spec, rating };
+      const children = getChildSpots(spot.id);
+      return {
+        ...spot,
+        ...(children.length ? { children } : {}),
+        buoyData: buoy,
+        specData: spec,
+        rating,
+      };
     }),
   );
 
