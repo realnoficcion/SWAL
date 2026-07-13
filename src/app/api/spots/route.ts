@@ -9,18 +9,21 @@ export const revalidate = 300;
 
 async function fetchForSpot(spot: Spot) {
   if (spot.provider !== "ndbc") {
-    const [buoy, spec] = await Promise.all([
+    const [buoy, spec, regionalBuoy] = await Promise.all([
       fetchOpenMeteoBuoy(spot.lat, spot.lon).catch(() => null),
       fetchOpenMeteoSpec(spot.lat, spot.lon).catch(() => null),
+      spot.provider === "hybrid" && spot.buoy
+        ? fetchLatestBuoy(spot.buoy).catch(() => null)
+        : Promise.resolve(null),
     ]);
-    return { buoy, spec };
+    return { buoy, spec, regionalBuoy };
   }
-  if (!spot.buoy) return { buoy: null, spec: null };
+  if (!spot.buoy) return { buoy: null, spec: null, regionalBuoy: null };
   const [buoy, spec] = await Promise.all([
     fetchLatestBuoy(spot.buoy).catch(() => null),
     fetchLatestSpec(spot.buoy).catch(() => null),
   ]);
-  return { buoy, spec };
+  return { buoy, spec, regionalBuoy: null };
 }
 
 export async function GET(req: Request) {
@@ -31,7 +34,7 @@ export async function GET(req: Request) {
   const selected = (query ? matches : matches.filter(isFeaturedSpot)).slice(0, 30);
   const spots = await Promise.all(
     selected.map(async (spot) => {
-      const { buoy, spec } = await fetchForSpot(spot);
+      const { buoy, spec, regionalBuoy } = await fetchForSpot(spot);
       const rating = rateConditions({
         waveHeightM: buoy?.waveHeightM ?? spec?.significantWaveHeightM ?? null,
         dominantPeriodS: buoy?.dominantPeriodS ?? spec?.swellPeriodS ?? null,
@@ -43,6 +46,7 @@ export async function GET(req: Request) {
         ...(children.length ? { children } : {}),
         buoyData: buoy,
         specData: spec,
+        regionalBuoyData: regionalBuoy,
         rating,
       };
     }),

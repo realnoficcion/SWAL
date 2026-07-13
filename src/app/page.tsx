@@ -12,6 +12,7 @@ export const revalidate = 300;
 type SpotWithData = Spot & {
   buoyData: BuoyReading | null;
   specData: SpecReading | null;
+  regionalBuoyData: BuoyReading | null;
   rating: Rating;
 };
 

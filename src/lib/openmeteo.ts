@@ -39,7 +39,7 @@ export async function fetchOpenMeteoBuoy(
   lon: number,
 ): Promise<BuoyReading | null> {
   try {
-    const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height,wind_wave_period,wind_wave_direction&timezone=UTC`;
+    const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height,wind_wave_period,wind_wave_direction&cell_selection=sea&timezone=UTC`;
     const windUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m&wind_speed_unit=ms&timezone=UTC`;
 
     const [marineRes, windRes] = await Promise.all([
@@ -84,7 +84,7 @@ export async function fetchOpenMeteoSpec(
   lon: number,
 ): Promise<SpecReading | null> {
   try {
-    const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height,wind_wave_period,wind_wave_direction&timezone=UTC`;
+    const url = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height,wind_wave_period,wind_wave_direction&cell_selection=sea&timezone=UTC`;
     const res = await fetch(url, {
       headers: { "User-Agent": UA },
       next: { revalidate: 900 },

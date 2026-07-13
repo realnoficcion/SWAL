@@ -11,6 +11,7 @@ import type { Rating } from "@/lib/rating";
 type SpotWithData = Spot & {
   buoyData: BuoyReading | null;
   specData: SpecReading | null;
+  regionalBuoyData: BuoyReading | null;
   rating: Rating;
   children?: Spot[];
 };
@@ -204,7 +205,7 @@ export function SpotsBrowser({ spots }: Props) {
                             </span>
                           </div>
                           <p className="mt-1 text-[11px] text-[var(--muted)]">
-                            {s.children.length} surf breaks · tap to choose a peak
+                            {s.children.length} surf breaks · local model + NDBC {s.buoy} ref
                           </p>
                         </div>
                         <RatingPill rating={s.rating} />
@@ -243,7 +244,11 @@ export function SpotsBrowser({ spots }: Props) {
                         </span>
                       </div>
                       <p className="mt-1 text-[11px] text-[var(--muted)] truncate">
-                        {s.provider === "ndbc" ? `buoy ${s.buoy}` : "wave model"}{" "}
+                        {s.provider === "hybrid"
+                          ? `local model · NDBC ${s.buoy} ref${s.regionalBuoyData?.waveHeightM != null ? ` ${formatWave(s.regionalBuoyData.waveHeightM)}` : ""}`
+                          : s.provider === "ndbc"
+                            ? `buoy ${s.buoy}`
+                            : "wave model"}{" "}
                         · faces {s.faces} · {s.break}
                       </p>
                     </div>
