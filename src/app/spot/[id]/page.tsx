@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { Header } from "@/components/Header";
 import { Panel } from "@/components/Panel";
@@ -79,6 +79,7 @@ export default async function SpotPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  if (id === "rockaway") redirect("/spot/rockaway-90");
   const spot = getSpot(id);
   if (!spot) return notFound();
 

@@ -16,10 +16,13 @@ import { rateConditions } from "@/lib/rating";
 export const revalidate = 300;
 
 export async function GET(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id } = await ctx.params;
+  if (id === "rockaway") {
+    return NextResponse.redirect(new URL("/api/spot/rockaway-90", req.url));
+  }
   const spot = getSpot(id);
   if (!spot) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
