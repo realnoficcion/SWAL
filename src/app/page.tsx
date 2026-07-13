@@ -130,7 +130,6 @@ export default async function Home() {
             Open-Meteo
           </a>
         </p>
-        <p className="mt-1">built for waleska</p>
       </footer>
     </div>
   );

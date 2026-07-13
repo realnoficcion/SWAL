@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RatingPill } from "./RatingPill";
 import { degToCompass, metersToFeet, msToMph } from "@/lib/units";
 import type { Spot } from "@/lib/spots";
@@ -15,18 +15,6 @@ type SpotWithData = Spot & {
 };
 
 type Props = { spots: SpotWithData[] };
-
-const REGION_KEYS: Record<string, string[]> = {
-  ny: ["ny", "new york", "nyc"],
-  floripa: ["floripa", "florianópolis", "florianopolis", "brasil", "brazil", "santa catarina", "sc"],
-};
-
-function normalize(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
 
 function formatWave(m: number | null): string {
   if (m == null) return "—";
@@ -42,65 +30,50 @@ function formatWind(ms: number | null, dir: number | null): string {
 
 export function SpotsBrowser({ spots }: Props) {
   const [query, setQuery] = useState<string>("");
-  const [filter, setFilter] = useState<string>("all");
+  const [results, setResults] = useState<SpotWithData[]>(spots);
+  const [total, setTotal] = useState(spots.length);
+  const [loading, setLoading] = useState(false);
 
-  const countries = useMemo(() => {
-    const set = new Set<string>();
-    for (const s of spots) set.add(s.country);
-    return ["all", ...Array.from(set).sort()];
-  }, [spots]);
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) return;
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const qn = normalize(q);
-    let out = spots;
-    if (filter !== "all") out = out.filter((s) => s.country === filter);
-    
-    // If no query, apply the default restriction
-    if (!q) {
-      if (filter === "all") {
-        return out.filter((s) => s.region.includes(", NY") || s.region.includes(", BR"));
-      }
-      return out;
-    }
-
-    // If there IS a query, search across all spots (ignoring the default restriction)
-    return spots.filter((s) => {
-      // Direct matches (normalized for accents)
-      const matchesDirect =
-        normalize(s.name).includes(qn) ||
-        normalize(s.region).includes(qn) ||
-        normalize(s.id).includes(qn) ||
-        normalize(s.faces).includes(qn) ||
-        normalize(s.break).includes(qn) ||
-        normalize(s.notes).includes(qn);
-
-      if (matchesDirect) return true;
-
-      // Region shortcuts expansion
-      for (const [_key, terms] of Object.entries(REGION_KEYS)) {
-        // If the query matches a shortcut keyword (e.g., "ny", "floripa")
-        if (terms.some((t) => normalize(t).includes(qn))) {
-          // Check if the spot belongs to this region expansion
-          if (
-            terms.some(
-              (t) =>
-                normalize(s.region).includes(normalize(t)) ||
-                normalize(s.name).includes(normalize(t)),
-            )
-          ) {
-            return true;
-          }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/spots?q=${encodeURIComponent(q)}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
+        const data = (await response.json()) as {
+          spots: SpotWithData[];
+          total: number;
+        };
+        setResults(data.spots);
+        setTotal(data.total);
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          setResults([]);
+          setTotal(0);
         }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
+    }, 250);
 
-      return false;
-    });
-  }, [spots, query, filter]);
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [query, spots]);
+
+  const visibleSpots = query.trim() ? results : spots;
+  const visibleTotal = query.trim() ? total : spots.length;
 
   const grouped = useMemo(() => {
     const map = new Map<string, SpotWithData[]>();
-    for (const s of filtered) {
+    for (const s of visibleSpots) {
       // Group by country/region logic: use "NY" for all NY spots, and "Florianópolis" for all Floripa spots
       let k = s.region;
       if (s.region.includes(", NY")) k = "New York";
@@ -118,7 +91,7 @@ export function SpotsBrowser({ spots }: Props) {
       if (b[0] === "Florianópolis") return 1;
       return a[0].localeCompare(b[0]);
     });
-  }, [filtered]);
+  }, [visibleSpots]);
 
   return (
     <>
@@ -132,15 +105,22 @@ export function SpotsBrowser({ spots }: Props) {
             inputMode="search"
             autoComplete="off"
             spellCheck={false}
-            placeholder="search spot, region or country..."
+            placeholder="search any USA or Brazil surf spot..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setQuery(value);
+              if (!value.trim()) setLoading(false);
+            }}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel)]/60 pl-8 pr-3 py-2.5 text-sm font-mono text-[var(--text)] placeholder:text-[var(--muted)]/70 focus:border-[var(--accent)]/60 focus:outline-none focus:ring-1 focus:ring-[var(--accent)]/40"
           />
           {query ? (
             <button
               type="button"
-              onClick={() => setQuery("")}
+              onClick={() => {
+                setQuery("");
+                setLoading(false);
+              }}
               className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--accent)] text-xs uppercase tracking-widest"
               aria-label="clear search"
             >
@@ -148,31 +128,20 @@ export function SpotsBrowser({ spots }: Props) {
             </button>
           ) : null}
         </div>
-        <div className="flex gap-1 rounded-lg border border-[var(--border)] bg-[var(--panel)]/40 p-1 text-[10px] uppercase tracking-widest overflow-x-auto no-scrollbar">
-          {countries.map((f) => (
-            <button
-              key={f}
-              type="button"
-              onClick={() => setFilter(f)}
-              className={
-                "px-2.5 py-1.5 rounded-md transition-colors whitespace-nowrap " +
-                (filter === f
-                  ? "bg-[var(--accent)]/20 text-[var(--accent)]"
-                  : "text-[var(--muted)] hover:text-[var(--text)]")
-              }
-            >
-              {f}
-            </button>
-          ))}
-        </div>
       </div>
 
       <div className="mb-3 flex items-center justify-between text-[10px] uppercase tracking-widest text-[var(--muted)]">
-        <span>▸ {filtered.length} spot{filtered.length === 1 ? "" : "s"}</span>
-        {query || filter !== "all" ? (
+        <span>
+          ▸ {loading ? "searching..." : `${visibleTotal} spot${visibleTotal === 1 ? "" : "s"}`}
+          {!loading && query && visibleTotal > visibleSpots.length ? ` · showing ${visibleSpots.length}` : ""}
+        </span>
+        {query ? (
           <button
             type="button"
-            onClick={() => { setQuery(""); setFilter("all"); }}
+            onClick={() => {
+              setQuery("");
+              setLoading(false);
+            }}
             className="text-[var(--accent)] hover:underline"
           >
             reset
@@ -180,7 +149,7 @@ export function SpotsBrowser({ spots }: Props) {
         ) : null}
       </div>
 
-      {filtered.length === 0 ? (
+      {!loading && visibleSpots.length === 0 ? (
         <div className="rounded-lg border border-[var(--border)] bg-[var(--panel)]/40 p-6 text-center text-sm text-[var(--muted)]">
           <p>no spots match &quot;{query}&quot;</p>
           <p className="mt-1 text-[11px]">try: rockaway, joaquina, ditch, floripa</p>

@@ -13,6 +13,7 @@ export type Spot = {
   faces: string;
   break: string;
   notes: string;
+  featured?: boolean;
 };
 
 export const SPOTS: Spot[] = [
@@ -174,8 +175,177 @@ export const SPOTS: Spot[] = [
     break: "beach",
     notes: "North of the island. Handles size, catches NE swells too.",
   },
+  ...createOpenMeteoSpots(),
 ];
+
+type CatalogSpot = [
+  id: string,
+  name: string,
+  region: string,
+  country: Spot["country"],
+  lat: number,
+  lon: number,
+  faces: string,
+  breakType: string,
+];
+
+// Search-only catalog. Conditions are requested only after a user searches,
+// keeping the New York + Florianópolis landing view fast.
+function createOpenMeteoSpots(): Spot[] {
+  const catalog: CatalogSpot[] = [
+    ["rincon", "Rincón", "Puerto Rico, US", "US", 18.362, -67.269, "NW", "reef/point"],
+    ["jobos", "Jobos Beach", "Isabela, PR, US", "US", 18.512, -67.070, "N/NW", "reef"],
+    ["surfersbeach", "Surfer's Beach", "Aguadilla, PR, US", "US", 18.505, -67.121, "N/NW", "reef"],
+    ["marias", "María's Beach", "Rincón, PR, US", "US", 18.368, -67.268, "NW", "reef/point"],
+    ["trespalmas", "Tres Palmas", "Rincón, PR, US", "US", 18.371, -67.270, "NW", "reef"],
+    ["luquillo", "La Pared", "Luquillo, PR, US", "US", 18.375, -65.720, "N/NE", "reef"],
+    ["waikiki", "Waikiki", "Honolulu, HI", "US", 21.276, -157.829, "S", "reef"],
+    ["pipeline", "Banzai Pipeline", "North Shore, HI", "US", 21.665, -158.052, "N/NW", "reef"],
+    ["sunsetbeach", "Sunset Beach", "North Shore, HI", "US", 21.680, -158.041, "NW", "beach"],
+    ["waimea", "Waimea Bay", "North Shore, HI", "US", 21.642, -158.064, "NW", "reef"],
+    ["haleiwa", "Haleʻiwa Aliʻi Beach", "Oahu, HI", "US", 21.592, -158.103, "N/NW", "reef"],
+    ["makaha", "Mākaha Beach", "Oahu, HI", "US", 21.477, -158.223, "W/NW", "reef"],
+    ["sandybeach", "Sandy Beach", "Oahu, HI", "US", 21.285, -157.672, "E/SE", "beach"],
+    ["hookipa", "Ho'okipa", "Maui, HI", "US", 20.936, -156.300, "N/NE", "reef"],
+    ["peahi", "Peʻahi (Jaws)", "Maui, HI", "US", 20.942, -156.300, "N/NE", "reef"],
+    ["hanalei", "Hanalei Bay", "Kauai, HI", "US", 22.211, -159.500, "N", "reef"],
+    ["tunnels", "Tunnels Beach", "Kauai, HI", "US", 22.221, -159.576, "N/NW", "reef"],
+    ["oceanbeach", "Ocean Beach", "San Francisco, CA", "US", 37.760, -122.510, "W", "beach"],
+    ["pacifica", "Pacifica", "Pacifica, CA", "US", 37.599, -122.503, "W", "beach"],
+    ["halfmoonbay", "Half Moon Bay", "Half Moon Bay, CA", "US", 37.464, -122.444, "W/NW", "reef"],
+    ["santacruz", "Steamer Lane", "Santa Cruz, CA", "US", 36.951, -122.026, "W/NW", "reef/point"],
+    ["pleasurepoint", "Pleasure Point", "Santa Cruz, CA", "US", 36.949, -121.968, "S/SW", "reef/point"],
+    ["waddell", "Waddell Creek", "Davenport, CA", "US", 37.096, -122.283, "W/NW", "beach"],
+    ["mavericks", "Mavericks", "Half Moon Bay, CA", "US", 37.495, -122.497, "W/NW", "reef"],
+    ["pismobeach", "Pismo Beach", "Pismo Beach, CA", "US", 35.140, -120.642, "W/NW", "beach"],
+    ["morro", "Morro Rock", "Morro Bay, CA", "US", 35.367, -120.868, "W/NW", "beach"],
+    ["refugio", "Refugio State Beach", "Santa Barbara, CA", "US", 34.463, -120.071, "S/SW", "point"],
+    ["rinconca", "Rincon Point", "Santa Barbara, CA", "US", 34.373, -119.478, "W/NW", "point"],
+    ["malibu", "Surfrider Beach", "Malibu, CA", "US", 34.033, -118.677, "S/SW", "point"],
+    ["venice", "Venice Beach", "Los Angeles, CA", "US", 33.986, -118.473, "W/SW", "beach"],
+    ["manhattanbeach", "Manhattan Beach", "Los Angeles, CA", "US", 33.885, -118.414, "W/SW", "beach"],
+    ["huntington", "Huntington Beach", "Huntington Beach, CA", "US", 33.656, -118.002, "W/SW", "beach"],
+    ["newport", "Newport Beach", "Newport Beach, CA", "US", 33.608, -117.930, "W/SW", "beach"],
+    ["laguna", "Laguna Beach", "Laguna Beach, CA", "US", 33.542, -117.785, "S/SW", "reef"],
+    ["trestles", "Lower Trestles", "San Clemente, CA", "US", 33.384, -117.588, "SW", "point"],
+    ["oceanside", "Oceanside", "Oceanside, CA", "US", 33.193, -117.385, "W/SW", "beach"],
+    ["blacks", "Black's Beach", "San Diego, CA", "US", 32.889, -117.253, "W/SW", "beach"],
+    ["lajolla", "La Jolla Shores", "San Diego, CA", "US", 32.858, -117.257, "W/SW", "beach"],
+    ["imperialbeach", "Imperial Beach", "San Diego, CA", "US", 32.579, -117.132, "W/SW", "beach"],
+    ["ventura", "Ventura Point", "Ventura, CA", "US", 34.274, -119.301, "W/NW", "point"],
+    ["cocoa", "Cocoa Beach", "Cocoa Beach, FL", "US", 28.320, -80.607, "E", "beach"],
+    ["sebastian", "Sebastian Inlet", "Melbourne Beach, FL", "US", 27.863, -80.446, "E/NE", "jetty"],
+    ["newsmryna", "New Smyrna Beach", "New Smyrna Beach, FL", "US", 29.025, -80.927, "E/NE", "beach"],
+    ["ponce", "Ponce Inlet", "Ponce Inlet, FL", "US", 29.096, -80.937, "E/NE", "jetty"],
+    ["jacksonville", "Jacksonville Beach", "Jacksonville, FL", "US", 30.294, -81.393, "E/NE", "beach"],
+    ["staugustine", "St. Augustine Beach", "St. Augustine, FL", "US", 29.850, -81.266, "E/NE", "beach"],
+    ["flagler", "Flagler Beach", "Flagler Beach, FL", "US", 29.474, -81.126, "E/NE", "beach"],
+    ["pensacola", "Pensacola Beach", "Pensacola, FL", "US", 30.333, -87.142, "S", "beach"],
+    ["capehat", "Cape Hatteras", "Outer Banks, NC", "US", 35.235, -75.531, "E/SE", "beach"],
+    ["nagshead", "Nags Head", "Outer Banks, NC", "US", 35.957, -75.624, "E/NE", "beach"],
+    ["wrightsville", "Wrightsville Beach", "Wilmington, NC", "US", 34.208, -77.796, "E/SE", "beach"],
+    ["follly", "Folly Beach", "Charleston, SC", "US", 32.655, -79.940, "SE", "beach"],
+    ["tybee", "Tybee Island", "Savannah, GA", "US", 32.000, -80.845, "E/SE", "beach"],
+    ["jersey", "Manasquan Inlet", "New Jersey, NJ", "US", 40.105, -74.036, "E/SE", "jetty"],
+    ["asbury", "Asbury Park", "New Jersey, NJ", "US", 40.220, -74.012, "E/SE", "beach"],
+    ["belmar", "Belmar", "New Jersey, NJ", "US", 40.178, -74.021, "E/SE", "beach"],
+    ["cape_may", "Cape May", "Cape May, NJ", "US", 38.934, -74.906, "SE", "beach"],
+    ["montaukpoint", "Montauk Point", "Montauk, NY", "US", 41.076, -71.859, "E/SE", "reef/point"],
+    ["narragansett", "Narragansett Town Beach", "Narragansett, RI", "US", 41.431, -71.455, "S/SE", "beach"],
+    ["matunuck", "Matunuck", "South Kingstown, RI", "US", 41.371, -71.570, "S", "beach"],
+    ["goodharbor", "Good Harbor Beach", "Gloucester, MA", "US", 42.610, -70.662, "E/NE", "beach"],
+    ["nantasket", "Nantasket Beach", "Hull, MA", "US", 42.273, -70.858, "E/SE", "beach"],
+    ["scituate", "Scituate", "Scituate, MA", "US", 42.204, -70.718, "E/SE", "beach"],
+    ["oregon", "Cannon Beach", "Cannon Beach, OR", "US", 45.891, -123.961, "W/NW", "beach"],
+    ["shortsands", "Short Sands", "Oswald West, OR", "US", 45.770, -123.962, "W/NW", "beach"],
+    ["newportor", "Newport", "Newport, OR", "US", 44.626, -124.063, "W/NW", "beach"],
+    ["manzanita", "Manzanita", "Manzanita, OR", "US", 45.720, -123.946, "W/NW", "beach"],
+    ["westport", "Westport", "Westport, WA", "US", 46.890, -124.122, "W/NW", "beach"],
+    ["la_push", "La Push", "La Push, WA", "US", 47.910, -124.637, "W/NW", "beach"],
+    ["olympic", "Rialto Beach", "Olympic Peninsula, WA", "US", 47.922, -124.638, "W/NW", "beach"],
+    ["torres", "Praia de Torres", "Torres, RS, BR", "BR", -29.350, -49.732, "E/SE", "beach"],
+    ["capao", "Capão da Canoa", "Capão da Canoa, RS, BR", "BR", -29.747, -50.008, "E/SE", "beach"],
+    ["tramandai", "Tramandaí", "Tramandaí, RS, BR", "BR", -29.987, -50.134, "E/SE", "beach"],
+    ["cassino", "Praia do Cassino", "Rio Grande, RS, BR", "BR", -32.182, -52.161, "E/SE", "beach"],
+    ["garopaba", "Praia da Garopaba", "Garopaba, SC, BR", "BR", -28.025, -48.615, "S/SE", "beach"],
+    ["rosa", "Praia do Rosa", "Imbituba, SC, BR", "BR", -28.133, -48.643, "S/SE", "beach"],
+    ["praiaibiraquera", "Praia de Ibiraquera", "Imbituba, SC, BR", "BR", -28.160, -48.676, "E/SE", "beach"],
+    ["ferrugem", "Praia da Ferrugem", "Garopaba, SC, BR", "BR", -28.062, -48.628, "S/SE", "beach"],
+    ["guarda", "Guarda do Embaú", "Palhoça, SC, BR", "BR", -27.903, -48.598, "S/SE", "beach/river mouth"],
+    ["pinheira", "Praia da Pinheira", "Palhoça, SC, BR", "BR", -27.866, -48.616, "S/SE", "beach"],
+    ["bombinhas", "Praia de Bombinhas", "Bombinhas, SC, BR", "BR", -27.148, -48.488, "E/SE", "beach"],
+    ["mariscal", "Praia de Mariscal", "Bombinhas, SC, BR", "BR", -27.180, -48.500, "E/SE", "beach"],
+    ["itajai", "Praia Brava", "Itajaí, SC, BR", "BR", -26.944, -48.634, "E/SE", "beach"],
+    ["balneario", "Praia Central", "Balneário Camboriú, SC, BR", "BR", -26.990, -48.636, "E/SE", "beach"],
+    ["matinhos", "Praia de Matinhos", "Matinhos, PR, BR", "BR", -25.817, -48.538, "E/SE", "beach"],
+    ["caioba", "Praia de Caiobá", "Matinhos, PR, BR", "BR", -25.845, -48.533, "E/SE", "beach"],
+    ["ilha", "Ilha do Mel", "Paranaguá, PR, BR", "BR", -25.566, -48.315, "E/SE", "beach"],
+    ["guaruja", "Praia de Guarujá", "Guarujá, SP, BR", "BR", -23.994, -46.256, "S/SE", "beach"],
+    ["maresias", "Praia de Maresias", "São Sebastião, SP, BR", "BR", -23.789, -45.563, "S/SE", "beach"],
+    ["juquehy", "Praia de Juquehy", "São Sebastião, SP, BR", "BR", -23.768, -45.731, "S/SE", "beach"],
+    ["camburi", "Praia de Camburi", "São Sebastião, SP, BR", "BR", -23.764, -45.702, "S/SE", "beach"],
+    ["ubatuba", "Praia de Itamambuca", "Ubatuba, SP, BR", "BR", -23.403, -44.998, "S/SE", "beach"],
+    ["felix", "Praia do Félix", "Ubatuba, SP, BR", "BR", -23.361, -44.972, "S/SE", "beach"],
+    ["paraty", "Praia de Trindade", "Paraty, RJ, BR", "BR", -23.355, -44.719, "S/SE", "beach"],
+    ["itauna", "Praia de Itaúna", "Saquarema, RJ, BR", "BR", -22.933, -42.491, "S/SE", "beach/point"],
+    ["barra", "Barra da Tijuca", "Rio de Janeiro, RJ, BR", "BR", -23.009, -43.364, "S/SE", "beach"],
+    ["arpoador", "Arpoador", "Rio de Janeiro, RJ, BR", "BR", -22.987, -43.193, "S/SE", "reef/point"],
+    ["recreio", "Praia do Recreio", "Rio de Janeiro, RJ, BR", "BR", -23.032, -43.486, "S/SE", "beach"],
+    ["prainha", "Prainha", "Rio de Janeiro, RJ, BR", "BR", -23.046, -43.510, "S/SE", "beach"],
+    ["grumari", "Praia de Grumari", "Rio de Janeiro, RJ, BR", "BR", -23.051, -43.526, "S/SE", "beach"],
+    ["buzios", "Geribá", "Armação dos Búzios, RJ, BR", "BR", -22.770, -41.915, "S/SE", "beach"],
+    ["cabo", "Praia do Forte", "Cabo Frio, RJ, BR", "BR", -22.879, -42.018, "S/SE", "beach"],
+    ["araruama", "Praia de Araruama", "Araruama, RJ, BR", "BR", -22.882, -42.340, "S/SE", "beach"],
+    ["guarapari", "Praia do Morro", "Guarapari, ES, BR", "BR", -20.654, -40.492, "E/SE", "beach"],
+    ["regencia", "Regência", "Linhares, ES, BR", "BR", -19.643, -39.895, "E/SE", "beach/river mouth"],
+    ["itacare", "Praia da Tiririca", "Itacaré, BA, BR", "BR", -14.279, -38.996, "E/SE", "beach"],
+    ["itacarezinho", "Itacarezinho", "Itacaré, BA, BR", "BR", -14.318, -39.031, "E/SE", "beach"],
+    ["barra_grande", "Taipu de Fora", "Maraú, BA, BR", "BR", -13.931, -38.926, "E/SE", "reef"],
+    ["salvador", "Praia do Flamengo", "Salvador, BA, BR", "BR", -12.934, -38.332, "E/SE", "beach"],
+    ["olinda", "Praia de Olinda", "Olinda, PE, BR", "BR", -8.011, -34.849, "E/SE", "beach"],
+    ["maracaipe", "Praia de Maracaípe", "Ipojuca, PE, BR", "BR", -8.519, -35.009, "E/SE", "beach/river mouth"],
+    ["pipa", "Praia da Pipa", "Tibau do Sul, RN, BR", "BR", -6.229, -35.048, "E/SE", "beach"],
+    ["baiaformosa", "Baía Formosa", "Baía Formosa, RN, BR", "BR", -6.371, -35.006, "E/SE", "beach"],
+    ["paracuru", "Paracuru", "Paracuru, CE, BR", "BR", -3.411, -39.032, "NE", "reef"],
+    ["jericoacoara", "Jericoacoara", "Jijoca de Jericoacoara, CE, BR", "BR", -2.794, -40.512, "NE", "beach"],
+    ["atins", "Atins", "Barreirinhas, MA, BR", "BR", -2.574, -42.742, "NE", "beach"],
+    ["salinopolis", "Praia do Atalaia", "Salinópolis, PA, BR", "BR", -0.618, -47.358, "NE", "beach"],
+  ];
+
+  return catalog.map(([id, name, region, country, lat, lon, faces, breakType]) => ({
+    id,
+    name,
+    region,
+    country,
+    lat,
+    lon,
+    provider: "openmeteo",
+    faces,
+    break: breakType,
+    notes: "Search-only surf spot. Conditions are provided by the Open-Meteo marine model.",
+  }));
+}
 
 export function getSpot(id: string): Spot | undefined {
   return SPOTS.find((s) => s.id === id);
+}
+
+export function isFeaturedSpot(spot: Spot): boolean {
+  return spot.region.includes(", NY") || spot.region.includes("Florianópolis, BR");
+}
+
+function normalize(value: string): string {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+export function searchSpots(query: string): Spot[] {
+  const terms = normalize(query).trim().split(/\s+/).filter(Boolean);
+  if (!terms.length) return SPOTS.filter(isFeaturedSpot);
+
+  return SPOTS.filter((spot) => {
+    const haystack = normalize(
+      [spot.name, spot.region, spot.country, spot.id, spot.faces, spot.break, spot.notes].join(" "),
+    );
+    return terms.every((term) => haystack.includes(term));
+  });
 }

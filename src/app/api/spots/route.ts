@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { SPOTS } from "@/lib/spots";
+import { isFeaturedSpot, searchSpots } from "@/lib/spots";
 import type { Spot } from "@/lib/spots";
 import { fetchLatestBuoy, fetchLatestSpec } from "@/lib/noaa";
 import { fetchOpenMeteoBuoy, fetchOpenMeteoSpec } from "@/lib/openmeteo";
@@ -23,9 +23,14 @@ async function fetchForSpot(spot: Spot) {
   return { buoy, spec };
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const query = new URL(req.url).searchParams.get("q")?.trim() ?? "";
+  const matches = query ? searchSpots(query) : searchSpots("");
+  // A broad search (for example, "Brazil") can match many spots. Fetching
+  // live data for a bounded set keeps the public marine APIs responsive.
+  const selected = (query ? matches : matches.filter(isFeaturedSpot)).slice(0, 30);
   const spots = await Promise.all(
-    SPOTS.map(async (spot) => {
+    selected.map(async (spot) => {
       const { buoy, spec } = await fetchForSpot(spot);
       const rating = rateConditions({
         waveHeightM: buoy?.waveHeightM ?? spec?.significantWaveHeightM ?? null,
@@ -36,5 +41,9 @@ export async function GET() {
     }),
   );
 
-  return NextResponse.json({ spots, ts: new Date().toISOString() });
+  return NextResponse.json({
+    spots,
+    total: matches.length,
+    ts: new Date().toISOString(),
+  });
 }
