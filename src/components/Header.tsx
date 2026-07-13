@@ -7,7 +7,7 @@ type HeaderProps = {
 
 export function Header({ crumb, right }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--bg)_92%,transparent)] backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-[var(--border)] bg-[color-mix(in_oklab,var(--bg)_92%,transparent)] pt-[env(safe-area-inset-top)] backdrop-blur-xl">
       <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
         <Link href="/" className="group flex items-baseline gap-2">
           <span className="text-[var(--accent)] text-sm">╱╱</span>
