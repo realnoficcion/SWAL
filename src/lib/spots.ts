@@ -1,4 +1,4 @@
-export type SpotProvider = "ndbc" | "openmeteo";
+export type SpotProvider = "ndbc" | "openmeteo" | "hybrid";
 
 export type Spot = {
   id: string;
@@ -41,7 +41,7 @@ export const SPOTS: Spot[] = [
     country: "US",
     lat: 40.5912,
     lon: -73.7969,
-    provider: "ndbc",
+    provider: "hybrid",
     buoy: "44065",
     tideStation: "8531680",
     faces: "S",
@@ -56,7 +56,7 @@ export const SPOTS: Spot[] = [
     country: "US",
     lat: 40.5885,
     lon: -73.8138,
-    provider: "ndbc",
+    provider: "hybrid",
     buoy: "44065",
     tideStation: "8531680",
     faces: "S",
@@ -71,7 +71,7 @@ export const SPOTS: Spot[] = [
     country: "US",
     lat: 40.5877,
     lon: -73.8169,
-    provider: "ndbc",
+    provider: "hybrid",
     buoy: "44065",
     tideStation: "8531680",
     faces: "S",
@@ -86,7 +86,7 @@ export const SPOTS: Spot[] = [
     country: "US",
     lat: 40.5829,
     lon: -73.8377,
-    provider: "ndbc",
+    provider: "hybrid",
     buoy: "44065",
     tideStation: "8531680",
     faces: "S",

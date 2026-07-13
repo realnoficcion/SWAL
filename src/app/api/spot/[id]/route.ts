@@ -28,25 +28,29 @@ export async function GET(
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
-  const isOM = spot.provider === "openmeteo";
+  const usesLocalModel = spot.provider !== "ndbc";
+  const usesRegionalBuoy = spot.provider === "hybrid";
 
-  const [buoy, spec, tides, windForecast] = await Promise.all([
-    isOM
+  const [buoy, spec, tides, windForecast, regionalBuoy] = await Promise.all([
+    usesLocalModel
       ? fetchOpenMeteoBuoy(spot.lat, spot.lon).catch(() => null)
       : spot.buoy
         ? fetchLatestBuoy(spot.buoy).catch(() => null)
         : Promise.resolve(null),
-    isOM
+    usesLocalModel
       ? fetchOpenMeteoSpec(spot.lat, spot.lon).catch(() => null)
       : spot.buoy
         ? fetchLatestSpec(spot.buoy).catch(() => null)
         : Promise.resolve(null),
-    !isOM && spot.tideStation
+    spot.tideStation
       ? fetchTides(spot.tideStation, 2).catch(() => [])
       : Promise.resolve([]),
-    isOM
+    usesLocalModel
       ? fetchOpenMeteoWindForecast(spot.lat, spot.lon).catch(() => [])
       : fetchWindForecast(spot.lat, spot.lon).catch(() => []),
+    usesRegionalBuoy && spot.buoy
+      ? fetchLatestBuoy(spot.buoy).catch(() => null)
+      : Promise.resolve(null),
   ]);
 
   const rating = rateConditions({
@@ -59,6 +63,7 @@ export async function GET(
     spot,
     buoy,
     spec,
+    regionalBuoy,
     tides,
     windForecast,
     rating,

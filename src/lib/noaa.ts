@@ -130,7 +130,6 @@ export async function fetchTides(station: string, days = 2): Promise<TideEvent[]
     const date = new Date(today);
     date.setDate(today.getDate() + d);
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, "");
-    const url = `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=${station}&product=predictions&datum=MLLW&time_zone=lst_ldt&units=english&interval=hilo&format=json&date=${dateStr === today.toISOString().slice(0, 10).replace(/-/g, "") ? "today" : "latest"}&begin_date=${dateStr}&range=24`;
     try {
       const res = await fetch(
         `https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?station=${station}&product=predictions&datum=MLLW&time_zone=lst_ldt&units=english&interval=hilo&format=json&begin_date=${dateStr}&range=24`,

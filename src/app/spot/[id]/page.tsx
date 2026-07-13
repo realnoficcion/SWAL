@@ -23,6 +23,7 @@ type Payload = {
   spot: Spot;
   buoy: BuoyReading | null;
   spec: SpecReading | null;
+  regionalBuoy: BuoyReading | null;
   tides: TideEvent[];
   windForecast: HourlyForecast[];
   rating: Rating;
@@ -86,7 +87,8 @@ export default async function SpotPage({
   const data = await getSpotData(id);
   if (!data) return notFound();
 
-  const { buoy, spec, tides, windForecast, rating, ts } = data;
+  const { buoy, spec, regionalBuoy, tides, windForecast, rating, ts } = data;
+  const usesLocalModel = spot.provider !== "ndbc";
   const updated = new Date(ts);
   const upStr = updated.toLocaleString("en-US", {
     timeZone: "America/New_York",
@@ -130,7 +132,11 @@ export default async function SpotPage({
         </p>
       </section>
 
-      <Panel title="now // wave" hint={buoy?.time ? fmtTime(buoy.time) : "no data"} className="mb-4">
+      <Panel
+        title="now // wave"
+        hint={usesLocalModel ? "open-meteo local model" : buoy?.time ? fmtTime(buoy.time) : "no data"}
+        className="mb-4"
+      >
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <Stat
             label="height"
@@ -156,8 +162,22 @@ export default async function SpotPage({
         </div>
       </Panel>
 
+      {spot.provider === "hybrid" && spot.buoy ? (
+        <Panel title="regional // buoy reference" hint={`ndbc ${spot.buoy}`} className="mb-4">
+          <div className="grid grid-cols-3 gap-4">
+            <Stat label="height" value={fmtWave(regionalBuoy?.waveHeightM ?? null)} />
+            <Stat label="period" value={fmtSec(regionalBuoy?.dominantPeriodS ?? null)} />
+            <Stat label="from" value={fmtDir(regionalBuoy?.meanWaveDirDeg ?? null)} />
+          </div>
+        </Panel>
+      ) : null}
+
       {spec && (spec.swellHeightM != null || spec.windWaveHeightM != null) ? (
-        <Panel title="swell // decomposed" hint="ndbc.spec" className="mb-4">
+        <Panel
+          title="swell // decomposed"
+          hint={usesLocalModel ? "open-meteo local model" : "ndbc.spec"}
+          className="mb-4"
+        >
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded border border-[var(--border)] p-3">
               <p className="text-[10px] uppercase tracking-widest text-[var(--muted)] mb-2">
@@ -206,7 +226,11 @@ export default async function SpotPage({
         </Panel>
       ) : null}
 
-      <Panel title="wind // now" hint={`buoy ${spot.buoy}`} className="mb-4">
+      <Panel
+        title="wind // now"
+        hint={usesLocalModel ? "open-meteo local model" : `buoy ${spot.buoy}`}
+        className="mb-4"
+      >
         <div className="grid grid-cols-3 gap-4">
           <Stat
             label="speed"
@@ -227,7 +251,7 @@ export default async function SpotPage({
       {windForecast.length > 0 ? (
         <Panel
           title="forecast // next 24h"
-          hint={spot.provider === "openmeteo" ? "open-meteo" : "nws hourly"}
+          hint={usesLocalModel ? "open-meteo" : "nws hourly"}
           className="mb-4"
         >
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
@@ -292,10 +316,14 @@ export default async function SpotPage({
 
       <Panel
         title="raw // source"
-        hint={spot.provider === "openmeteo" ? "open-meteo model" : `ndbc ${spot.buoy}`}
+        hint={usesLocalModel ? "open-meteo local model" : `ndbc ${spot.buoy}`}
       >
         <pre className="overflow-x-auto text-[11px] leading-relaxed text-[var(--muted)] whitespace-pre">
-{`source     : ${spot.provider === "openmeteo" ? "open-meteo (noaa ww3 model)" : `ndbc buoy ${spot.buoy}`}
+{`source     : ${usesLocalModel ? "open-meteo local marine model" : `ndbc buoy ${spot.buoy}`}
+regional    : ${regionalBuoy && spot.buoy ? `ndbc buoy ${spot.buoy}` : "n/a"}
+regional m  : ${regionalBuoy?.waveHeightM ?? "--"}
+regional s  : ${regionalBuoy?.dominantPeriodS ?? "--"}
+regional dir: ${regionalBuoy?.meanWaveDirDeg ?? "--"}
 tide       : ${spot.tideStation ?? "n/a"}
 lat,lon    : ${spot.lat.toFixed(4)}, ${spot.lon.toFixed(4)}
 wave (m)   : ${buoy?.waveHeightM ?? "--"}
@@ -313,7 +341,7 @@ served at  : ${upStr} ET`}
       </Panel>
 
       <footer className="mt-6 text-center text-[10px] text-[var(--muted)]">
-        {spot.provider === "ndbc" && spot.buoy ? (
+        {!usesLocalModel && spot.buoy ? (
           <a
             className="underline hover:text-[var(--accent)]"
             href={`https://www.ndbc.noaa.gov/station_page.php?station=${spot.buoy}`}
@@ -322,6 +350,27 @@ served at  : ${upStr} ET`}
           >
             view buoy {spot.buoy} on ndbc →
           </a>
+        ) : spot.provider === "hybrid" && spot.buoy ? (
+          <>
+            <a
+              className="underline hover:text-[var(--accent)]"
+              href={`https://open-meteo.com/en/docs/marine-weather-api#latitude=${spot.lat}&longitude=${spot.lon}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              wave source: open-meteo marine (noaa ww3)
+            </a>
+            <span> · </span>
+            <a
+              className="underline hover:text-[var(--accent)]"
+              href={`https://www.ndbc.noaa.gov/station_page.php?station=${spot.buoy}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              regional buoy {spot.buoy}
+            </a>
+            <span> →</span>
+          </>
         ) : (
           <a
             className="underline hover:text-[var(--accent)]"

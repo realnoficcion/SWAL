@@ -8,7 +8,7 @@ import { rateConditions } from "@/lib/rating";
 export const revalidate = 300;
 
 async function fetchForSpot(spot: Spot) {
-  if (spot.provider === "openmeteo") {
+  if (spot.provider !== "ndbc") {
     const [buoy, spec] = await Promise.all([
       fetchOpenMeteoBuoy(spot.lat, spot.lon).catch(() => null),
       fetchOpenMeteoSpec(spot.lat, spot.lon).catch(() => null),
