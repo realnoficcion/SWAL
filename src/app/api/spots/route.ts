@@ -1,0 +1,40 @@
+import { NextResponse } from "next/server";
+import { SPOTS } from "@/lib/spots";
+import type { Spot } from "@/lib/spots";
+import { fetchLatestBuoy, fetchLatestSpec } from "@/lib/noaa";
+import { fetchOpenMeteoBuoy, fetchOpenMeteoSpec } from "@/lib/openmeteo";
+import { rateConditions } from "@/lib/rating";
+
+export const revalidate = 300;
+
+async function fetchForSpot(spot: Spot) {
+  if (spot.provider === "openmeteo") {
+    const [buoy, spec] = await Promise.all([
+      fetchOpenMeteoBuoy(spot.lat, spot.lon).catch(() => null),
+      fetchOpenMeteoSpec(spot.lat, spot.lon).catch(() => null),
+    ]);
+    return { buoy, spec };
+  }
+  if (!spot.buoy) return { buoy: null, spec: null };
+  const [buoy, spec] = await Promise.all([
+    fetchLatestBuoy(spot.buoy).catch(() => null),
+    fetchLatestSpec(spot.buoy).catch(() => null),
+  ]);
+  return { buoy, spec };
+}
+
+export async function GET() {
+  const spots = await Promise.all(
+    SPOTS.map(async (spot) => {
+      const { buoy, spec } = await fetchForSpot(spot);
+      const rating = rateConditions({
+        waveHeightM: buoy?.waveHeightM ?? spec?.significantWaveHeightM ?? null,
+        dominantPeriodS: buoy?.dominantPeriodS ?? spec?.swellPeriodS ?? null,
+        windSpeedMs: buoy?.windSpeedMs ?? null,
+      });
+      return { ...spot, buoyData: buoy, specData: spec, rating };
+    }),
+  );
+
+  return NextResponse.json({ spots, ts: new Date().toISOString() });
+}
